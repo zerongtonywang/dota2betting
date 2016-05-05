@@ -39,8 +39,6 @@ def save_teamstat(statset, team, win, team_odds):
 
 
 def add_statset(title, delta_days, delta_begin=timezone.now(), names=None, lastgames=99999):
-    print("adding_statset")
-
     if names:
         names_list = names.split(",")
     else:

@@ -1,7 +1,4 @@
-from .models import *
 from .query import *
-from django.utils import timezone
-from datetime import timedelta
 
 
 def get_outcome(team, match, outcome, cash):
@@ -55,9 +52,7 @@ def bet_dynamically(team1stat, team2stat, match, outcome, cash, factor_cutoff):
 
 # bet on matches using learned teamstats, with cash
 def bet(matches, statset, cash=100, factor_cutoff=0):
-    outcome1 = 0
-    outcome2 = 0
-    outcome3 = 0
+    outcomes = [0, 0, 0]
     for match in matches:
         try:
             team1stat = Teamstat.objects.get(statset=statset, team=match.team1)
@@ -65,38 +60,7 @@ def bet(matches, statset, cash=100, factor_cutoff=0):
         except Teamstat.DoesNotExist:
             continue
 
-        outcome1 = bet_on_winrate(team1stat, team2stat, match, outcome1, cash)
-        outcome2 = bet_on_odds(team1stat, team2stat, match, outcome2, cash, factor_cutoff)
-        outcome3 = bet_dynamically(team1stat, team2stat, match, outcome3, cash, factor_cutoff)
-    return outcome1, outcome2, outcome3
-
-
-# Simulate betting with {cash} dollars using data from past {delta_days} days, validate using data from {test_days} days
-def simulate(learn_days, test_days, days_offset=0, cash=100, factor_cutoff=0):
-    offset_begin = timezone.now() - timedelta(days=days_offset)
-    matches = matches_filter(delta_days=test_days, delta_begin=offset_begin)
-
-    title = "learn:{0} test:{1} offset:{2}".format(learn_days, test_days, days_offset)
-    delta_begin = offset_begin - timedelta(days=test_days)
-    try:
-        statset = StatSet.objects.get(title=title)
-    except StatSet.DoesNotExist:
-        statset = add_statset(title=title, delta_days=learn_days, delta_begin=delta_begin)
-
-    outcomes = bet(matches, statset, cash, factor_cutoff)
-    print("{0} - {1}".format(title, outcomes))
+        outcomes[0] = bet_on_winrate(team1stat, team2stat, match, outcomes[0], cash)
+        outcomes[1] = bet_on_odds(team1stat, team2stat, match, outcomes[1], cash, factor_cutoff)
+        outcomes[2] = bet_dynamically(team1stat, team2stat, match, outcomes[2], cash, factor_cutoff)
     return outcomes
-
-
-def bulk_simulate(learn_days, test_days, days_offset=0, cash=100, factor_cutoff=0, bulk=360):
-    totals = [0, 0, 0]
-    for period in range(0, bulk, test_days):
-        outcomes = simulate(learn_days, test_days, days_offset=period, cash=cash, factor_cutoff=factor_cutoff)
-        for i, outcome in enumerate(outcomes):
-            totals[i] += outcome
-
-    averages = [0, 0, 0]
-    for i, total in enumerate(totals):
-        averages[i] += total / (bulk / test_days)
-    print("learn:{0} test:{1} bulk:{2} - {3}".format(learn_days, test_days, bulk, averages))
-    # return average
