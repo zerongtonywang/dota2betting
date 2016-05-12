@@ -1,34 +1,38 @@
 from .query import *
 
 
-def get_outcome(team, match, outcome, cash):
+def get_cash_outcome(team, match, cash_outcome, cash):
     if match.winner == team:
         if team == match.team1:
-            outcome += cash / match.team1odds - cash
+            cash_outcome += cash / match.team1odds - cash
         elif team == match.team2:
-            outcome += cash / match.team2odds - cash
+            cash_outcome += cash / match.team2odds - cash
     else:
-        outcome -= cash
-    return outcome
+        cash_outcome -= cash
+    return cash_outcome
+
+
+def get_outcome_percentage(team, match, percentage_outcome, cash):
+    return
 
 
 def bet_on_winrate(team1stat, team2stat, match, outcome, cash):
     # bet on team1
     if team1stat.winrate > team2stat.winrate:
-        outcome = get_outcome(match.team1, match, outcome, cash)
+        outcome = get_cash_outcome(match.team1, match, outcome, cash)
     # bet on team2
     elif team1stat.winrate < team2stat.winrate:
-        outcome = get_outcome(match.team2, match, outcome, cash)
+        outcome = get_cash_outcome(match.team2, match, outcome, cash)
     return outcome
 
 
 def bet_on_odds(team1stat, team2stat, match, outcome, cash, factor_cutoff):
     # bet on team1
     if team1stat.winrate > team2stat.winrate and match.team1odds - match.team2odds >= factor_cutoff:
-        outcome = get_outcome(match.team1, match, outcome, cash)
+        outcome = get_cash_outcome(match.team1, match, outcome, cash)
     # bet on team2
     elif team1stat.winrate < team2stat.winrate and match.team2odds - match.team1odds >= factor_cutoff:
-        outcome = get_outcome(match.team2, match, outcome, cash)
+        outcome = get_cash_outcome(match.team2, match, outcome, cash)
     return outcome
 
 
@@ -39,14 +43,14 @@ def bet_dynamically(team1stat, team2stat, match, outcome, cash, factor_cutoff):
         if delta_odds >= 0:
             bet_factor = 1 - delta_odds
             cash *= bet_factor
-            outcome = get_outcome(match.team1, match, outcome, cash)
+            outcome = get_cash_outcome(match.team1, match, outcome, cash)
     # bet on team2
     elif team1stat.winrate < team2stat.winrate:
         delta_odds = match.team2odds - match.team1odds
         if delta_odds >= 0:
             bet_factor = 1 - delta_odds
             cash *= bet_factor
-            outcome = get_outcome(match.team1, match, outcome, cash)
+            outcome = get_cash_outcome(match.team1, match, outcome, cash)
     return outcome
 
 
